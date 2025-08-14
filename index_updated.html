@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>The Challenge from Dr.Capybara</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+    h1 {
+      margin-top: 20px;
+    }
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-gap: 10px;
+      justify-content: center;
+      margin-top: 30px;
+    }
+    .cell {
+      width: 100px;
+      height: 100px;
+      border: 2px solid #555;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      background-color: #f4f4f4;
+    }
+    .cell img {
+      max-width: 80px;
+      max-height: 80px;
+    }
+    #status {
+      margin-top: 20px;
+      font-size: 18px;
+    }
+    #resetBtn {
+      margin-top: 15px;
+      padding: 10px 15px;
+    }
+    .message-box {
+      position: fixed;
+      top: 30%;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #fff8cc;
+      border: 3px solid #f5a623;
+      padding: 25px;
+      border-radius: 10px;
+      z-index: 999;
+      text-align: center;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+      animation: popIn 0.6s ease-in-out;
+    }
+
+    @keyframes popIn {
+      from { transform: translateX(-50%) scale(0); opacity: 0; }
+      to { transform: translateX(-50%) scale(1); opacity: 1; }
+    }
+
+    .fireworks {
+      position: relative;
+      margin-top: 20px;
+    }
+
+    .firework {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background: radial-gradient(circle, red, yellow);
+      border-radius: 50%;
+      animation: explode 1.5s ease-out infinite;
+    }
+
+    .firework:nth-child(1) { left: -50px; animation-delay: 0s; }
+    .firework:nth-child(2) { left: 0; animation-delay: 0.4s; }
+    .firework:nth-child(3) { left: 50px; animation-delay: 0.8s; }
+
+    @keyframes explode {
+      0%   { transform: scale(0.5); opacity: 1; }
+      50%  { transform: scale(2); opacity: 0.8; }
+      100% { transform: scale(0); opacity: 0; }
+    }
+
+    /* Overlay and dialog visibility */
+    #wheelOverlay,
+    #wheelDialog { display: none; }
+    #wheelOverlay[aria-hidden="false"],
+    #wheelDialog[aria-hidden="false"] { display: block; }
+
+    /* Overlay */
+    #wheelOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(1px);
+      z-index: 1000;
+    }
+
+    /* Dialog */
+    #wheelDialog {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: min(92vw, 520px);
+      height: min(92vh, 600px);
+      max-width: 520px;
+      background: #111;
+      color: #f7f7f7;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      z-index: 1001;
+      padding: 18px 18px 56px 18px;
+      overflow: hidden;
+    }
+
+    /* Screen-reader only */
+    .visually-hidden {
+      position: absolute !important;
+      height: 1px; width: 1px;
+      overflow: hidden;
+      clip: rect(1px, 1px, 1px, 1px);
+      white-space: nowrap;
+    }
+
+    /* Pointer centered at top */
+    .pointer-wrap {
+      position: absolute;
+      top: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      pointer-events: none;
+    }
+    .wheel-pointer { filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6)); }
+
+    /* Canvas sizing: ensure it has a visible CSS size even before draw() */
+    #lotteryWheel {
+      display: block;
+      margin: 72px auto 0;
+      width: min(80vw, 420px);
+      height: min(80vw, 420px);
+      background: radial-gradient(circle at 50% 50%, #222 0%, #111 60%, #0b0b0b 100%);
+      border-radius: 50%;
+      box-shadow: inset 0 0 20px rgba(255,255,255,0.06), 0 12px 28px rgba(0,0,0,0.6);
+      cursor: pointer;
+    }
+
+    /* Exit button */
+    .wheel-exit {
+      position: absolute;
+      right: 14px;
+      bottom: 12px;
+      padding: 8px 14px;
+      background: #e23d2b;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.25);
+    }
+    .wheel-exit:hover { background: #c53626; }
+
+    /* Result text */
+    .wheel-result {
+      text-align: center;
+      margin-top: 14px;
+      font-size: 1.05rem;
+      min-height: 1.2em;
+      color: #ffe08a;
+      letter-spacing: 0.3px;
+    }
+
+
+
+  </style>
+</head>
+<body>
+  <h1> Dr.Politoed ❤️ vs Dr.Capybara ❤️ </h1>
+  <label>
+  <input type="checkbox" id="birthdayToggle" />
+  🎂 Birthday Mode
+  </label>
+  <div class="board" id="board"></div>
+  <div id="status">Player Politoed's turn</div>
+  <button id="resetBtn">Reset Game</button>
+
+  <script>
+    const boardEl = document.getElementById('board');
+    const statusEl = document.getElementById('status');
+    const resetBtn = document.getElementById('resetBtn');
+
+    const POLITOED_IMG = 'politoed.png';  // Use local image or direct URL
+    const CAPYBARA_IMG = 'capybara.png'; // Use local image or direct URL
+
+    let board = Array(9).fill(null);
+    let currentPlayer = 'Politoed';
+
+    const birthdayToggle = document.getElementById('birthdayToggle');
+    function createBoard() {
+      boardEl.innerHTML = '';
+      board.forEach((_, index) => {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.index = index;
+        cell.addEventListener('click', handleMove);
+        boardEl.appendChild(cell);
+      });
+    }
+
+    function handleMove(e) {
+      const index = e.target.dataset.index;
+      if (board[index]) return;
+
+      board[index] = currentPlayer;
+      const img = document.createElement('img');
+      img.src = currentPlayer === 'Politoed' ? POLITOED_IMG : CAPYBARA_IMG;
+      e.target.appendChild(img);
+
+      if (checkWinner()) {
+        statusEl.textContent = `${currentPlayer} wins! 🎉`;
+        boardEl.querySelectorAll('.cell').forEach(cell => cell.removeEventListener('click', handleMove));
+        if (currentPlayer === 'Politoed' && birthdayToggle.checked) {
+          document.getElementById('winMessage').style.display = 'block';
+        }
+      } else if (board.every(cell => cell)) {
+        statusEl.textContent = `It's a draw! 🤝`;
+      } else {
+        currentPlayer = currentPlayer === 'Politoed' ? 'Capybara' : 'Politoed';
+        statusEl.textContent = `Player ${currentPlayer}'s turn`;
+      }
+    }
+
+    function checkWinner() {
+      const winPatterns = [
+        [0,1,2], [3,4,5], [6,7,8],
+        [0,3,6], [1,4,7], [2,5,8],
+        [0,4,8], [2,4,6]
+      ];
+      return winPatterns.some(pattern => 
+        pattern.every(i => board[i] === currentPlayer)
+      );
+    }
+
+    resetBtn.addEventListener('click', () => {
+      board = Array(9).fill(null);
+      currentPlayer = 'Politoed';
+      statusEl.textContent = `Player ${currentPlayer}'s turn`;
+      document.getElementById('winMessage').style.display = 'none';
+      createBoard();
+    });
+
+    createBoard();
+  </script>
+  <div id="winMessage" class="message-box" style="display:none;">
+  <h2>🎉 Happy Birthday, Dear PoliPolitoed! </h2>
+	<p>
+  		Wish you become stronger, healthier and smarter!
+      <br> Wish you get millions dollars of funding!
+      <br> Wish you become the major "supplier" of Nature and Science! 
+      <br> Wish all your dreams come true ❤️
+  		<br>
+  		<button id="tryYourLuckBtn" class="linklike">It’s time try your luck</button>
+	</p>
+  <div class="fireworks">
+    <div class="firework"></div>
+    <div class="firework"></div>
+    <div class="firework"></div>
+  </div>
+</div>
+<!-- Lottery Wheel Popup -->
+<div id="wheelOverlay" aria-hidden="true"></div>
+
+<div id="wheelDialog" role="dialog" aria-modal="true" aria-labelledby="wheelTitle" aria-hidden="true">
+  <h3 id="wheelTitle" class="visually-hidden">Birthday Lottery Wheel</h3>
+
+  <!-- regular pointer + indicator -->
+<div class="pointer-wrap" aria-hidden="true">
+  <svg class="wheel-pointer" viewBox="0 0 60 60" width="60" height="60">
+    <!-- Triangle pointing downwards -->
+    <polygon points="15,32 45,32 30,60" fill="#ffdc00" stroke="#aa8800" stroke-width="3" />
+  </svg>
+</div>
+
+  <!-- Wheel canvas -->
+  <canvas id="lotteryWheel" width="420" height="420" aria-label="Spin the wheel to try your luck"></canvas>
+
+  <!-- Result text (optional) -->
+  <div id="wheelResult" class="wheel-result" aria-live="polite"></div>
+
+  <!-- Exit button -->
+  <button id="wheelExitBtn" class="wheel-exit" type="button">Exit</button>
+</div>
+
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // Labels and colors
+    const labels = [
+      "Grammy award","King of NYC","Lost memory",
+      "Rock&Roll","Blessed Giving","Once Again","Lazy Mood"
+    ];
+    const colors = ["#ff0000","#ff7a00","#ffd500","#00a04b","#0073ff","#4b0082","#8f00ff"];
+
+    // Elements
+    const tryBtn = document.getElementById('tryYourLuckBtn');
+    const overlay = document.getElementById('wheelOverlay');
+    const dialog = document.getElementById('wheelDialog');
+    const canvas = document.getElementById('lotteryWheel');
+    const exitBtn = document.getElementById('wheelExitBtn');
+    const resultEl = document.getElementById('wheelResult');
+
+    // Guard: if canvas or context missing, bail early with a console hint
+    if (!canvas) {
+      console.warn('[Wheel] #lotteryWheel not found. Ensure the HTML block is in the DOM.');
+      return;
+    }
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      console.warn('[Wheel] 2D context unavailable. Check if the canvas is supported.');
+      return;
+    }
+
+    const TAU = Math.PI * 2;
+    const sliceCount = labels.length;
+    const sliceAngleDeg = 360 / sliceCount;
+
+    // Spin state
+    let currentRotation = 0; // degrees
+    let spinning = false;
+
+    // Draw the wheel (uses current CSS size; scales for HiDPI)
+    function drawWheel() {
+      const dpr = Math.max(1, Math.floor(window.devicePixelRatio || 1));
+      const cssW = Math.round(canvas.clientWidth);
+      const cssH = Math.round(canvas.clientHeight);
+      if (cssW === 0 || cssH === 0) {
+        // If invisible, skip; caller should re-invoke after visible.
+        return;
+      }
+      // Square canvas; use min of width/height
+      const size = Math.min(cssW, cssH);
+      canvas.width = size * dpr;
+      canvas.height = size * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      const cx = size / 2;
+      const cy = size / 2;
+      const rOuter = size * 0.48;
+      const rInner = size * 0.10;
+      const sliceRad = TAU / sliceCount;
+      const startAt = -Math.PI / 2 - sliceRad / 2; // center a slice at 12 o'clock
+
+      ctx.clearRect(0, 0, size, size);
+
+      // Slices
+      for (let i = 0; i < sliceCount; i++) {
+        const a0 = startAt + i * sliceRad;
+        const a1 = a0 + sliceRad;
+
+        // Fill slice with rainbow color
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, rOuter, a0, a1, false);
+        ctx.closePath();
+        ctx.fillStyle = colors[i % colors.length];
+        ctx.fill();
+
+        // Separator line
+        ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+        ctx.lineWidth = Math.max(1, size * 0.004);
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + rOuter * Math.cos(a0), cy + rOuter * Math.sin(a0));
+        ctx.stroke();
+
+        // Label
+        const mid = (a0 + a1) / 2;
+        const tx = cx + (rOuter + rInner) / 2 * Math.cos(mid);
+        const ty = cy + (rOuter + rInner) / 2 * Math.sin(mid);
+
+        ctx.save();
+        ctx.translate(tx, ty);
+        ctx.rotate(mid + Math.PI / 2); // orient text radially
+        ctx.fillStyle = '#fff';
+        ctx.font = `bold ${Math.max(12, Math.floor(size * 0.025))}px system-ui, -apple-system, Segoe UI, Roboto, Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(labels[i], 0, 0, rOuter * 0.8);
+        ctx.restore();
+      }
+
+      // Inner hub
+      ctx.beginPath();
+      ctx.arc(cx, cy, rInner, 0, TAU);
+      ctx.fillStyle = '#111';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+      ctx.lineWidth = size * 0.01;
+      ctx.stroke();
+
+      // Rim
+      ctx.beginPath();
+      ctx.arc(cx, cy, rOuter, 0, TAU);
+      ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+      ctx.lineWidth = size * 0.02;
+      ctx.stroke();
+    }
+
+    // Map final rotation to a slice index (0 at top center)
+    function angleToIndex(angleDeg) {
+      let a = ((angleDeg % 360) + 360) % 360; // normalize
+      a = (a + sliceAngleDeg/2) % 360;        // align with top-centered slice
+      const idx = Math.floor(a / sliceAngleDeg) % sliceCount;
+      return idx;
+    }
+
+
+    // Open/close with safe draw timing
+    function openWheel() {
+      overlay.setAttribute('aria-hidden', 'false');
+      dialog.setAttribute('aria-hidden', 'false');
+      resultEl.textContent = '';
+      // Draw after the dialog becomes visible and layout settles
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          drawWheel();
+        });
+      });
+    }
+    function closeWheel() {
+      overlay.setAttribute('aria-hidden', 'true');
+      dialog.setAttribute('aria-hidden', 'true');
+    }
+
+    // Spin animation
+    function spinWheel() {
+      if (spinning) return;
+      spinning = true;
+      resultEl.textContent = '';
+
+      const targetIndex = Math.floor(Math.random() * sliceCount);
+      const fullTurns = 5 + Math.floor(Math.random() * 3); // 5–7
+      const jitter = (Math.random() - 0.5) * (sliceAngleDeg * 0.6);
+
+      const targetAngle = currentRotation + fullTurns * 360 + targetIndex * sliceAngleDeg + jitter;
+
+      canvas.style.transition = `transform 4600ms cubic-bezier(0.12, 0.11, 0.0, 1.0)`;
+      canvas.style.transform = `rotate(${targetAngle}deg)`;
+
+      const onEnd = () => {
+        canvas.removeEventListener('transitionend', onEnd);
+        currentRotation = targetAngle;
+        spinning = false;
+        canvas.style.transition = 'transform 0s';
+        // const landedIndex = angleToIndex(currentRotation) + 1;
+        // resultEl.textContent = `Result: ${labels[landedIndex]} 🎉`;
+        console.log('Angle:', currentRotation % 360, 'Index:', landedIndex, 'Label:', labels[landedIndex]);
+      };
+      canvas.addEventListener('transitionend', onEnd, { once: true });
+    }
+
+    // Wire events
+    tryBtn?.addEventListener('click', openWheel);
+    overlay.addEventListener('click', closeWheel);
+    exitBtn.addEventListener('click', closeWheel);
+    canvas.addEventListener('click', spinWheel);
+
+    // Redraw on resize while open
+    window.addEventListener('resize', () => {
+      if (dialog.getAttribute('aria-hidden') === 'false') drawWheel();
+    });
+
+    // Fallback: expose an opener for quick testing from console
+    window.openLotteryWheel = openWheel;
+  });
+  </script>
+
+
+</body>
+</html>
