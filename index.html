@@ -511,6 +511,8 @@
       });
     }
     function closeWheel() {
+	  music.pause();
+      music.currentTime = 0;
       overlay.setAttribute('aria-hidden', 'true');
       dialog.setAttribute('aria-hidden', 'true');
     }
