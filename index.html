@@ -345,7 +345,7 @@
   btn.addEventListener('click', () => {
     music.volume = 0.6;
     music.play();
-    btn.style.display = 'none'; // hide button after start
+    // btn.style.display = 'none'; // hide button after start
   });
 </script>
 
@@ -543,11 +543,16 @@
       };
       canvas.addEventListener('transitionend', onEnd, { once: true });
     }
+	function stopMusic() {
+    	music.pause();
+    	music.currentTime = 0; // rewind for next time
+    }
 
     // Wire events
     tryBtn?.addEventListener('click', openWheel);
     overlay.addEventListener('click', closeWheel);
-    exitBtn.addEventListener('click', closeWheel);
+    // exitBtn.addEventListener('click', closeWheel);
+	exitBtn.addEventListener('click', () => {closeWheel; stopMusic()});
     canvas.addEventListener('click', spinWheel);
 
     // Redraw on resize while open
