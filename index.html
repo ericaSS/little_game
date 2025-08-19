@@ -330,6 +330,19 @@
     <div class="firework"></div>
     <div class="firework"></div>
   </div>
+
+<!-- Happy Birthday music -->
+  <audio id="birthdayMusic" autoplay>
+	<source src="happy-birthday.mp3" type="audio/mpeg">
+	<source src="happy-birthday.ogg" type="audio/ogg">
+		Your browser does not support the audio element.
+  </audio>
+
+<script>
+  const music = document.getElementById('birthdayMusic');
+  music.volume = 0.6; // 60% volume for balance with visuals
+</script>
+
 </div>
 <!-- Lottery Wheel Popup -->
 <div id="wheelOverlay" aria-hidden="true"></div>
