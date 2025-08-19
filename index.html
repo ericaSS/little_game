@@ -551,8 +551,8 @@
     // Wire events
     tryBtn?.addEventListener('click', openWheel);
     overlay.addEventListener('click', closeWheel);
-    // exitBtn.addEventListener('click', closeWheel);
-	exitBtn.addEventListener('click', () => {closeWheel; stopMusic()});
+	exitBtn.addEventListener('click', () => {stopMusic()});
+    exitBtn.addEventListener('click', closeWheel);
     canvas.addEventListener('click', spinWheel);
 
     // Redraw on resize while open
