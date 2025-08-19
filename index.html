@@ -332,14 +332,44 @@
   </div>
 
   <!-- Happy Birthday music -->
-	<audio id="birthdayMusic" autoplay loop>
-	  <source src="happy-birthday-jazz-band-style-117435.mp3" type="audio/mpeg">
-	</audio>
-	
-	<script>
-	  const music = document.getElementById('birthdayMusic');
-	  music.volume = 0.6; // 60% volume for balance with visuals
-	</script>
+<audio id="birthdayMusic" loop>
+  <source src="happy-birthday-jazz-band-style-117435.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+  const music = document.getElementById('birthdayMusic');
+
+  // Trigger when fireworks start
+  function startFireworksAndMusic() {
+    // Your existing fireworks start code here…
+    // Example: startFireworks();
+
+    music.currentTime = 0;   // start from beginning
+    music.volume = 0.6;
+    music.play(); // plays on user gesture-triggered event
+  }
+
+  // Trigger when wheel stops spinning
+  function stopWheelAndMusic() {
+    // Your existing logic for stopping the wheel…
+    // Example: stopWheel();
+
+    music.pause();
+    music.currentTime = 0; // reset for next round
+  }
+
+  // Example integration:
+  document.getElementById('startButton').addEventListener('click', () => {
+    startFireworksAndMusic();
+    startWheel(); // however you start the lottery wheel
+  });
+
+  // If your wheel has an "onFinish" callback/event:
+  function onWheelFinish() {
+    stopWheelAndMusic();
+    stopFireworks(); // if you want fireworks to end too
+  }
+</script>
 
 </div>
 <!-- Lottery Wheel Popup -->
