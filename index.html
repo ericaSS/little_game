@@ -60,29 +60,89 @@
       to { transform: translateX(-50%) scale(1); opacity: 1; }
     }
 
-    .fireworks {
-      position: relative;
-      margin-top: 20px;
-    }
+	.fireworks {
+	  position: relative;
+	  margin-top: 20px;
+	  overflow: visible;
+	}
+	
+	.firework {
+	  position: absolute;
+	  width: 200px;
+	  height: 200px;
+	  border-radius: 50%;
+	  background: radial-gradient(circle, #ffdd00, #ff6600, #ff0000);
+	  box-shadow:
+	    0 0 15px rgba(255, 255, 255, 0.8),
+	    0 0 30px rgba(255, 204, 0, 0.6),
+	    0 0 50px rgba(255, 102, 0, 0.5);
+	  animation:
+	    explode 1.5s ease-out infinite,
+	    sparkle 1s linear infinite,
+	    colorChange 4s linear infinite;
+	}
+	
+	.firework:nth-child(1) {
+	  left: -60px;
+	  animation-delay: 0s, 0s, 0s;
+	}
+	.firework:nth-child(2) {
+	  left: 0;
+	  animation-delay: 0.4s, 0.4s, 0.4s;
+	}
+	.firework:nth-child(3) {
+	  left: 60px;
+	  animation-delay: 0.8s, 0.8s, 0.8s;
+	}
+	
+	@keyframes explode {
+	  0% {
+	    transform: scale(0.3);
+	    opacity: 1;
+	    filter: blur(2px);
+	  }
+	  50% {
+	    transform: scale(1.8);
+	    opacity: 0.9;
+	    filter: blur(0);
+	  }
+	  100% {
+	    transform: scale(0);
+	    opacity: 0;
+	    filter: blur(2px);
+	  }
+	}
+	
+	@keyframes sparkle {
+	  0%, 100% {
+	    box-shadow:
+	      0 0 10px rgba(255, 255, 255, 0.9),
+	      0 0 20px rgba(255, 215, 0, 0.8),
+	      0 0 40px rgba(255, 69, 0, 0.6);
+	  }
+	  50% {
+	    box-shadow:
+	      0 0 20px rgba(255, 255, 255, 0.9),
+	      0 0 40px rgba(255, 215, 0, 0.8),
+	      0 0 60px rgba(255, 69, 0, 0.7);
+	  }
+	}
+	
+	@keyframes colorChange {
+	  0% {
+	    background: radial-gradient(circle, #ffdd00, #ff6600, #ff0000);
+	  }
+	  33% {
+	    background: radial-gradient(circle, #00ffcc, #0066ff, #6600ff);
+	  }
+	  66% {
+	    background: radial-gradient(circle, #ff00cc, #ff3300, #ffff00);
+	  }
+	  100% {
+	    background: radial-gradient(circle, #ffdd00, #ff6600, #ff0000);
+	  }
+	}
 
-    .firework {
-      position: absolute;
-      width: 200px;
-      height: 200px;
-      background: radial-gradient(circle, red, yellow);
-      border-radius: 50%;
-      animation: explode 1.5s ease-out infinite;
-    }
-
-    .firework:nth-child(1) { left: -50px; animation-delay: 0s; }
-    .firework:nth-child(2) { left: 0; animation-delay: 0.4s; }
-    .firework:nth-child(3) { left: 50px; animation-delay: 0.8s; }
-
-    @keyframes explode {
-      0%   { transform: scale(0.5); opacity: 1; }
-      50%  { transform: scale(2); opacity: 0.8; }
-      100% { transform: scale(0); opacity: 0; }
-    }
 
     /* Overlay and dialog visibility */
     #wheelOverlay,
